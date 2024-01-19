@@ -27,7 +27,6 @@ artifact_gitlab_github_packages_os:
 artifact_gitlab_github_packages_python:
   all:
     all:
-      lxml: present
       pexpect: present
 
 artifact_maven_packages_os:
