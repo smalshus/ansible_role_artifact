@@ -2,9 +2,11 @@
 - name: Converge
   hosts: molecule_hosts
   gather_facts: false
-  roles:
-    - amtega.artifact
   tasks:
+    - name: Setup artifacts
+      ansible.builtin.include_role:
+        name: amtega.artifact
+
     - name: Check artifact facts
       ansible.builtin.assert:
         that: artifact_result.tomcat1 is defined

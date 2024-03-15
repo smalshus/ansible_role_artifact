@@ -2,5 +2,7 @@
 - name: Converge
   hosts: molecule_hosts
   gather_facts: false
-  roles:
-    - amtega.artifact
+  tasks:
+    - name: Setup artifacts
+      ansible.builtin.include_role:
+        name: amtega.artifact
