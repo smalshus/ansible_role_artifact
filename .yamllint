@@ -70,6 +70,6 @@ rules:
   trailing-spaces: {}
   truthy:
     allowed-values:
-      - 'true'
-      - 'false'
+      - "true"
+      - "false"
     check-keys: false

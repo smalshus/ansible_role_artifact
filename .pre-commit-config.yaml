@@ -7,7 +7,7 @@ exclude: LICENSE|CHANGELOG.md|\.gitlab/
 
 repos:
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: 3.12.0
+    rev: v3.18.4
     hooks:
       - id: commitizen
         stages:
@@ -45,6 +45,6 @@ repos:
     hooks:
       - id: mdformat
   - repo: https://github.com/ansible/ansible-lint
-    rev: v6.21.1
+    rev: v24.2.1
     hooks:
       - id: ansible-lint

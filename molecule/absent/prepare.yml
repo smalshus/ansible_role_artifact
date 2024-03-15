@@ -2,8 +2,10 @@
 - name: Prepare
   hosts: molecule_hosts
   gather_facts: false
-  roles:
-    - role: amtega.artifact
+  tasks:
+    - name: Setup artifacts to make absent
+      ansible.builtin.include_role:
+        name: amtega.artifact
       vars:
         artifact_list:
           - id: tomcat1
