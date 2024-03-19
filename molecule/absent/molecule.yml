@@ -28,8 +28,8 @@ platforms:
       - molecule_hosts
       - molecule_hosts_centos
       - molecule_hosts_centos_8
-  - name: centos9-${INSTANCE_UUID:-1}
-    image: quay.io/centos/centos:stream9
+  - name: rocky9-${INSTANCE_UUID:-1}
+    image: rockylinux:9
     groups:
       - molecule_hosts
       - molecule_hosts_centos
