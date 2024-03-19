@@ -32,8 +32,8 @@ platforms:
     image: rockylinux:9
     groups:
       - molecule_hosts
-      - molecule_hosts_centos
-      - molecule_hosts_centos_9
+      - molecule_hosts_rocky
+      - molecule_hosts_rocky_9
   - name: fedora-${INSTANCE_UUID:-1}
     image: quay.io/fedora/fedora:latest
     groups:
