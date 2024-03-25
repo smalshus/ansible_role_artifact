@@ -1,13 +1,17 @@
 ---
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+
 default_stages:
-  - commit
-  - push
+  - pre-commit
+  - pre-push
 
 exclude: LICENSE|CHANGELOG.md|\.gitlab/
 
 repos:
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.18.4
+    rev: v3.20.0
     hooks:
       - id: commitizen
         stages:
@@ -48,3 +52,5 @@ repos:
     rev: v24.2.1
     hooks:
       - id: ansible-lint
+        stages:
+          - pre-push
