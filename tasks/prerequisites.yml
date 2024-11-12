@@ -8,6 +8,21 @@
       fedora: all
       redhat: 7
 
+- name: Gather facts
+  ansible.builtin.setup:
+    gather_subset:
+      - distribution
+      - distribution_major_version
+      - distribution_release
+      - distribution_version
+      - local
+  when: >-
+    ansible_local is not defined
+    or ansible_facts.distribution is not defined
+    or ansible_facts.distribution_major_version is not defined
+    or ansible_facts.distribution_release is not defined
+    or ansible_facts.distribution_version is not defined
+
 - name: Gather artifact host variables
   ansible.builtin.include_role:
     name: amtega.select_hostvars
@@ -23,5 +38,6 @@
 - name: Setup proxy client
   ansible.builtin.include_role:
     name: amtega.proxy_client
+  when: artifact_use_proxy | bool
   vars:
     proxy_client_permanent: false

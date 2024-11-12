@@ -1,0 +1,4 @@
+{% if item.name is search("^el6")
+      and item.command | default("") == "/sbin/init" %}
+RUN yum install -y initscripts
+{% endif %}

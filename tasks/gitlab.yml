@@ -1,7 +1,7 @@
 ---
 - name: Download gitlab/github artifacts
   when: artifact_item.download | default(true) | bool
-  environment: "{{ proxy_client_environment }}"
+  environment: "{{ artifact_proxy_client_environment }}"
   vars:
     artifact_gitlab_dest: >-
       {{ artifact_item.dest
@@ -77,7 +77,8 @@
             git_http_proxy_opt: >-
               {{ (proxy_client_environment.http_proxy
                   | default('')
-                  | length > 0)
+                  | length > 0
+                  and artifact_use_proxy | bool)
                  | ternary('-c "http.proxy='
                            + proxy_client_environment.http_proxy | default('')
                            + '"',
@@ -85,7 +86,8 @@
             git_https_proxy_opt: >-
               {{ (proxy_client_environment.https_proxy
                   | default('')
-                  | length > 0)
+                  | length > 0
+                  and artifact_use_proxy | bool)
                  | ternary('-c "https.proxy='
                            + proxy_client_environment.https_proxy | default('')
                            + '"',

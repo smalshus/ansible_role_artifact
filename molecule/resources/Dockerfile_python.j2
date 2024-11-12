@@ -1,0 +1,5 @@
+{% if item.name is search("^el7") %}
+RUN yum install -y python3
+{% elif item.name is not search("^el6") %}
+RUN dnf install -y python3
+{% endif %}
