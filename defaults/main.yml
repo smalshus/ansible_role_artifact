@@ -27,7 +27,7 @@
 #   unarchive_creates: <path>  # If the path given exists, the file will not
 #                              # unarchived
 #   unarchive_remove: >-
-#     <true_fale>              # Remove source archive file after being
+#     <true_false>             # Remove source archive file after being
 #                              # unarchived
 #   unarchive_force_root: <d>  # Ensure unarchive process creates the indicated
 #                              # root directory if the artifact package does not
@@ -188,3 +188,7 @@ artifact_skip_packages: false
 # Indicate if EPEL must be setup if necessary
 
 artifact_epel: true
+
+# Enable or disable proxy globally
+
+artifact_use_proxy: true

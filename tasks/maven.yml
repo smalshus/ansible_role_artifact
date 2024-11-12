@@ -100,7 +100,7 @@
             label: >-
               {{ artifact_item.id }} - {{ artifact_maven_repository_url }}
           ignore_errors: true
-          environment: "{{ proxy_client_environment }}"
+          environment: "{{ artifact_proxy_client_environment }}"
 
         - name: Check maven artifacts
           ansible.builtin.assert:

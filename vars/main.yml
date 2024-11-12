@@ -47,6 +47,7 @@ artifact_unarchive_packages_os:
       unzip: present
 
 artifact_unarchive_packages_python: {}
+
 # Artficat item vars
 
 artifact_item_unarchive_creates: >-
@@ -57,3 +58,9 @@ artifact_item_unarchive_creates_dest: >-
   {{ (artifact_item.unarchive_creates.0 | default("") != "/")
      | ternary(artifact_item.dest | default("") + "/", "")
      + artifact_item.unarchive_creates | default("") }}
+
+# Proxy vars
+
+artifact_proxy_client_environment: >-
+  {{ (artifact_use_proxy | bool)
+     | ternary(proxy_client_environment | default({}), {}) }}

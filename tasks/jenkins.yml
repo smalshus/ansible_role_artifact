@@ -83,7 +83,7 @@
         index_var: artifact_item_index
         label: "{{ artifact_item.id }} - {{ artifact_jenkins_url }}"
       ignore_errors: true
-      environment: "{{ proxy_client_environment }}"
+      environment: "{{ artifact_proxy_client_environment }}"
       vars:
         artifact_previous_version: >-
           {{ (ansible_local["artifact_" + artifact_item.id]
