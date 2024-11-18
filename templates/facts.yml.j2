@@ -72,15 +72,39 @@
 {% endif %}
 {%- endmacro %}
 
+{% set ns_gitlab = namespace(clone_changed=[], reset_changed=[], cleanup_changed=[]) %}
+{% for result in artifact_gitlab_clone_result.results %}
+{% if result | default({}) is changed %}
+{% set ns_gitlab.clone_changed = ns_gitlab.clone_changed
+                                 + [result.artifact_item.project] %}
+{% endif %}
+{% endfor %}
+
+{% set ns_gitlab = namespace(clone_changed=[], reset_changed=[], cleanup_changed=[]) %}
+{% for result in artifact_gitlab_reset_result.results %}
+{% if result | default({}) is changed %}
+{% set ns_gitlab.clone_changed = ns_gitlab.reset_changed
+                                 + [result.artifact_item.project] %}
+{% endif %}
+{% endfor %}
+
+{% set ns_gitlab = namespace(clone_changed=[], reset_changed=[], cleanup_changed=[]) %}
+{% for result in artifact_gitlab_cleanup_result.results %}
+{% if result | default({}) is changed %}
+{% set ns_gitlab.cleanup_changed = ns_gitlab.cleanup_changed
+                                 + [result.artifact_item.project] %}
+{% endif %}
+{% endfor %}
+
 {% for artifact in artifact_present_facts
                    | selectattr("type", "in", ["gitlab", "github"])
                    | list %}
 {{- fact(artifact) }}
-  changed: {{ artifact_gitlab_clone_result.results[loop.index0] is changed
-              or artifact_gitlab_reset_result.results[loop.index0] is changed
+  changed: {{ artifact.project in ns_gitlab.clone_changed
+              or artifact.project in ns_gitlab.reset_changed
               or artifact_gitlab_checkout_result.results[loop.index0] is changed
               or artifact_gitlab_move_result.results[loop.index0] is changed
-              or artifact_gitlab_cleanup_result.results[loop.index0] is changed
+              or artifact.project in ns_gitlab.cleanup_changed
               or artifact_gitlab_attributes_result.results[loop.index0] is changed
               or artifact.id in unarchived }}
 {% endfor %}

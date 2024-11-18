@@ -27,6 +27,12 @@
              | ternary(artifact_item_unarchive_creates_dest,
                        artifact_gitlab_dest) }}
 
+    - name: Compute name for gitlab/github project clones temporary directory
+      ansible.builtin.set_fact:
+        artifact_gitlab_tmp_dir_name: >-
+          .{{ 99999999999999999999 | random | to_uuid }}
+      when: artifact_gitlab_tmp_dir_name is not defined
+
     - name: Perform gitlab/github artifact download
       when: >-
         (not artifact_download_exists
@@ -58,9 +64,15 @@
               | default({}))["version"]
               | default(__artifact_undefined_place_holder) }}
       block:
-        - name: Create temporary directory for gitlab/github project clone
-          ansible.builtin.tempfile:
-            path: "{{ artifact_item.tmp_dest | default(artifact_item.dest) }}"
+        - name: Create temporary directory for gitlab/github project clones
+          ansible.builtin.file:
+            path: >-
+              {{ artifact_item.tmp_dest | default(artifact_item.dest)
+                 + "/"
+                 + artifact_gitlab_tmp_dir_name
+                 + artifact_item.project
+                 + ".git" }}
+            mode: "{{ artifact_item.mode | default(omit) }}"
             state: directory
           register: artifact_gitlab_tmp_result
           no_log: "{{ artifact_item.no_log | default(true) }}"
@@ -115,7 +127,10 @@
               register: artifact_gitlab_clone_result
               failed_when: artifact_gitlab_clone_result.rc | default(0) != 0
               no_log: "{{ artifact_item.no_log | default(true) }}"
-              loop: "{{ _artifact_type_state_present }}"
+              loop: >-
+                {{ _artifact_type_state_present
+                   | unique(attribute="project")
+                   | list }}
               loop_control:
                 loop_var: artifact_item
                 index_var: artifact_item_index
@@ -131,6 +146,8 @@
                 that: >-
                   artifact_gitlab_clone_result.results[artifact_item_index]
                   is success
+                  or artifact_gitlab_clone_result.results[artifact_item_index]
+                  is skipped
                 quiet: true
                 fail_msg: >-
                   {{ artifact_gitlab_clone_result.results
@@ -139,6 +156,7 @@
                 success_msg: Artifact cloned successful
               loop: >-
                 {{ _artifact_type_state_present
+                   | unique(attribute="project")
                    | map("artifact_hide_sensitive_info")
                    | list }}
               loop_control:
@@ -152,11 +170,21 @@
               ansible.builtin.command:
                 cmd: /usr/bin/git reset HEAD .
                 chdir: "{{ artifact_gitlab_tmp }}"
+              when: >-
+                artifact_item.project
+                not in artifact_gitlab_reset_result.results | default([])
+                      | map(attribute="artifact_item", default={})
+                      | map(attribute="project", default="")
+                      | list
+                      | unique
               register: artifact_gitlab_reset_result
               failed_when: artifact_gitlab_reset_result.rc != 0
               changed_when: true
               no_log: "{{ artifact_item.no_log | default(true) }}"
-              loop: "{{ _artifact_type_state_present }}"
+              loop: >-
+                {{ _artifact_type_state_present
+                   | unique(attribute="project")
+                   | list  }}
               loop_control:
                 loop_var: artifact_item
                 index_var: artifact_item_index
@@ -168,6 +196,8 @@
                 that: >-
                   artifact_gitlab_reset_result.results[artifact_item_index]
                   is success
+                  or artifact_gitlab_reset_result.results[artifact_item_index]
+                  is skipped
                 quiet: true
                 fail_msg: >-
                   {{ artifact_gitlab_reset_result.results
@@ -176,6 +206,7 @@
                 success_msg: Artifact clone reset to head was successful
               loop: >-
                 {{ _artifact_type_state_present
+                   | unique(attribute="project")
                    | map("artifact_hide_sensitive_info")
                    | list }}
               loop_control:
@@ -263,13 +294,17 @@
             index_var: artifact_item_index
             label: "{{ artifact_item.id }}"
 
+      always:
         - name: Cleanup temporary directory with gitlab/github project clone
           ansible.builtin.file:
             path: "{{ artifact_gitlab_tmp }}"
             state: absent
           register: artifact_gitlab_cleanup_result
           no_log: "{{ artifact_item.no_log | default(true) }}"
-          loop: "{{ _artifact_type_state_present }}"
+          loop: >-
+            {{ _artifact_type_state_present
+               | unique(attribute="project")
+               | list }}
           loop_control:
             loop_var: artifact_item
             index_var: artifact_item_index
