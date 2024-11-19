@@ -70,6 +70,7 @@
               {{ artifact_item.tmp_dest | default(artifact_item.dest)
                  + "/"
                  + artifact_gitlab_tmp_dir_name
+                 + "/"
                  + artifact_item.project
                  + ".git" }}
             mode: "{{ artifact_item.mode | default(omit) }}"
@@ -170,13 +171,6 @@
               ansible.builtin.command:
                 cmd: /usr/bin/git reset HEAD .
                 chdir: "{{ artifact_gitlab_tmp }}"
-              when: >-
-                artifact_item.project
-                not in artifact_gitlab_reset_result.results | default([])
-                      | map(attribute="artifact_item", default={})
-                      | map(attribute="project", default="")
-                      | list
-                      | unique
               register: artifact_gitlab_reset_result
               failed_when: artifact_gitlab_reset_result.rc != 0
               changed_when: true
@@ -184,7 +178,7 @@
               loop: >-
                 {{ _artifact_type_state_present
                    | unique(attribute="project")
-                   | list  }}
+                   | list }}
               loop_control:
                 loop_var: artifact_item
                 index_var: artifact_item_index
@@ -295,9 +289,12 @@
             label: "{{ artifact_item.id }}"
 
       always:
-        - name: Cleanup temporary directory with gitlab/github project clone
+        - name: Cleanup temporary directory with gitlab/github project clones
           ansible.builtin.file:
-            path: "{{ artifact_gitlab_tmp }}"
+            path: >-
+              {{ artifact_item.tmp_dest | default(artifact_item.dest)
+                 + "/"
+                 + artifact_gitlab_tmp_dir_name }}
             state: absent
           register: artifact_gitlab_cleanup_result
           no_log: "{{ artifact_item.no_log | default(true) }}"
