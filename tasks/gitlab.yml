@@ -305,4 +305,7 @@
           loop_control:
             loop_var: artifact_item
             index_var: artifact_item_index
-            label: "{{ artifact_item.id }}"
+            label: >-
+              {{ artifact_item.tmp_dest | default(artifact_item.dest)
+                 + "/"
+                 + artifact_gitlab_tmp_dir_name }}
