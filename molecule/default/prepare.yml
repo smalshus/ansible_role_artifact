@@ -1,4 +1,4 @@
 ---
-- name: Prepare CentOS 6 hosts
+- name: Prepare
   hosts: molecule_hosts
   gather_facts: false
