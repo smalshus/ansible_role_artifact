@@ -1,5 +1,5 @@
 ---
-- name: Remove artifacts
+- name: "{{ artifact_absent_task_name | default('Remove artifacts') }}"
   ansible.builtin.file:
     path: "{{ artifact_item_to_remove.1 }}"
     state: absent

@@ -11,7 +11,7 @@
                 | random
                 | to_uuid) }}
 
-    - name: Setup fact with artifacts to manage
+    - name: Setup facts with artifacts to manage
       ansible.builtin.set_fact:
         __artifact_to_manage: >-
           {{ (artifact_list
@@ -41,7 +41,7 @@
              | selectattr("state", "equalto", "absent")
              | list }}
 
-    - name: Setup fact with artifacts to run once
+    - name: Setup fact with artifacts present to run once
       ansible.builtin.set_fact:
         __artifact_state_present_run_once: >-
           {{ __artifact_state_present
@@ -49,29 +49,15 @@
              | selectattr("run_once", "equalto", True)
              | list }}
 
-    - name: Setup fact with artifacts to unarchive
+    - name: Setup fact with artifacts present to run n
       ansible.builtin.set_fact:
-        __artifact_present_unarchive_run_all: >-
-          {{ __artifact_state_present
-             | selectattr("unarchive", "defined")
-             | selectattr("unarchive", "equalto", True)
-             | list }}
-
-    - name: Setup fact with artifacts to unarchive and run one
-      ansible.builtin.set_fact:
-        __artifact_present_unarchive_run_once: >-
-          {{ __artifact_present_unarchive_run_all
-             | selectattr("run_once", "defined")
-             | selectattr("run_once", "equalto", True)
-             | list }}
-
-    - name: Setup facts with artifacts organized by several criteria
-      ansible.builtin.set_fact:
-        # Artifact list organized by state and type of run
-
         __artifact_state_present_run_n: >-
           {{ __artifact_state_present
              | difference(__artifact_state_present_run_once) }}
+
+    - name: Setup facts with artifacts organized by several criteria
+      ansible.builtin.set_fact:
+        # Absent artifact slist organized by type of run
 
         __artifact_state_absent_run_once: >-
           {{ __artifact_state_absent
@@ -105,15 +91,35 @@
              | selectattr("type", "in", ["maven"])
              | list }}
 
-        # Artifact list organized by unarchive attribute
+        # Artifact list organized by unarchive attributes
 
         __artifact_present_unarchive_run_n: >-
-          {{ __artifact_present_unarchive_run_all
-             | difference(__artifact_present_unarchive_run_once) }}
+          {{ __artifact_state_present_run_n
+             | selectattr("unarchive", "defined")
+             | selectattr("unarchive", "equalto", True)
+             | list }}
+
+        __artifact_present_unarchive_run_once: >-
+          {{ __artifact_state_present_run_once
+             | selectattr("unarchive", "defined")
+             | selectattr("unarchive", "equalto", True)
+             | list }}
 
         __artifact_present_unarchive_force_root: >-
           {{ __artifact_state_present
              | selectattr("unarchive_force_root", "defined")
+             | list }}
+
+        # Artifact list organized by checksum attribute
+
+        __artifact_present_checksum_run_n: >-
+          {{ __artifact_state_present_run_n
+             | selectattr("checksum", "defined")
+             | list }}
+
+        __artifact_present_checksum_run_once: >-
+          {{ __artifact_state_present_run_once
+             | selectattr("checksum", "defined")
              | list }}
 
     - name: Setup facts with artifacts type flags
@@ -125,7 +131,10 @@
           {{ __artifact_type_maven_state_present | length > 0 }}
 
         __artifact_unarchive_exist: >-
-          {{ __artifact_present_unarchive_run_all | length > 0 }}
+          {{ __artifact_state_present
+             | selectattr("unarchive", "defined")
+             | selectattr("unarchive", "equalto", True)
+             | list | length > 0 }}
 
     - name: Check artifacts config
       ansible.builtin.assert:

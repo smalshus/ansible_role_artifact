@@ -1,57 +1,94 @@
 ---
 - name: Download maven artifacts
   vars:
+    artifact_previous_version: >-
+      {{ (ansible_local["artifact_" + artifact_item.id]
+          | default({}))["version"]
+          | default(__artifact_undefined_place_holder) }}
+
+    artifact_maven_repository_url: >-
+      {{ artifact_item.host }}{{ artifact_item.path | default('/') }}
+
     artifact_maven_dest: >-
       {{ artifact_item.dest
-         + (artifact_item.dest_file | default("") | length > 0)
+         + (artifact_maven_has_dest_file)
            | ternary("/" + artifact_item.dest_file | default(""), "") }}
+
+    artifact_maven_has_dest_file: >-
+      {{ artifact_item.dest_file | default("") | length > 0 }}
+
+    artifact_maven_previous_download_path: >-
+      {{ ansible_local["artifact_" + artifact_item.id].download_path
+         | default("") }}
+
+    artifact_maven_has_previous_download_path: >-
+      {{ artifact_maven_previous_download_path | length > 0 }}
+
+    artifact_maven_download_check_path: >-
+      {{ (artifact_item_unarchive_creates)
+          | ternary(artifact_item_unarchive_creates_dest,
+                    artifact_maven_has_dest_file
+                    | ternary(artifact_maven_dest,
+                              artifact_maven_has_previous_download_path
+                              | ternary(artifact_maven_previous_download_path,
+                                        ""))) }}
+
+    artifact_maven_previous_download_to_remove: >-
+      {{ artifact_maven_has_dest_file
+         | ternary(artifact_maven_dest,
+                   artifact_maven_has_previous_download_path
+                   | ternary(artifact_maven_previous_download_path, "")) }}
+
+    artifact_maven_has_previous_download_to_remove: >-
+      {{ artifact_maven_previous_download_to_remove | length > 0 }}
   tags:
     - role::artifact
     - role::artifact::maven
   block:
     - name: Check maven artifact download
       ansible.builtin.stat:
-        path: "{{ artifact_maven_check_path }}"
+        path: "{{ artifact_maven_download_check_path }}"
+      when: artifact_maven_download_check_path | length > 0
       register: artifact_maven_check_result
-      no_log: "{{ artifact_item.no_log | default(true) }}"
       loop: "{{ _artifact_type_state_present }}"
       loop_control:
         loop_var: artifact_item
         label: "{{ artifact_item.id }}"
-      vars:
-        artifact_maven_check_path: >-
-          {{ (artifact_item_unarchive_creates)
-             | ternary(artifact_item_unarchive_creates_dest,
-                       artifact_maven_dest) }}
+      no_log: "{{ artifact_item.no_log | default(true) }}"
 
     - name: Perform maven artifacts download
       vars:
-        artifact_previous_version: >-
-          {{ (ansible_local["artifact_" + artifact_item.id]
-              | default({}))["version"]
-              | default(__artifact_undefined_place_holder) }}
         artifact_maven_check_results: >-
           {{ artifact_maven_check_result.results }}
+
         artifact_download_exists: >-
-          {{ artifact_maven_check_results[artifact_item_index].stat.exists }}
-        artifact_maven_repository_url: >-
-          {{ artifact_item.host }}{{ artifact_item.path | default('/') }}
+          {{ artifact_maven_check_results[artifact_item_index]
+             | default({}) is not skipped
+             and artifact_maven_check_results
+                 [artifact_item_index].stat.exists }}
+
+        artifact_download_required: >-
+          {{ (not artifact_download_exists
+              and artifact_item.check_download | default(true) | bool)
+             or (artifact_item.download | default(true) | bool
+                 and (artifact_item.force | default(false) | bool
+                      or artifact_previous_version is none
+                      or (artifact_item.version is defined
+                          and artifact_item.version | string
+                          != artifact_previous_version))) }}
       block:
         - name: Remove previous maven artifact download
-          ansible.builtin.include_tasks:
-            file: absent.yml
+          ansible.builtin.file:
+            path: "{{ artifact_maven_previous_download_to_remove }}"
+            state: absent
           when:
-            - artifact_download_exists
-            - artifact_item.download | default(true) | bool
-            - artifact_item.force | default(false) | bool
+            - artifact_maven_has_previous_download_to_remove
+            - artifact_download_required
           loop: "{{ _artifact_type_state_present }}"
           loop_control:
             loop_var: artifact_item
             index_var: artifact_item_index
             label: "{{ artifact_item.id }}"
-          vars:
-            artifact_state_absent_transient:
-              - "{{ artifact_item }}"
 
         - name: Download artifacts from maven repository
           community.general.maven_artifact:
@@ -83,15 +120,7 @@
           retries: "{{ artifact_item.retries | default(artifact_retries) }}"
           delay: "{{ artifact_item.delay | default(artifact_delay) }}"
           until: artifact_maven_result is succeeded
-          when: >-
-            (not artifact_download_exists
-             and artifact_item.check_download | default(true) | bool)
-            or (artifact_item.download | default(true) | bool
-                and (artifact_item.force | default(false) | bool
-                    or artifact_previous_version is none
-                    or (artifact_item.version is defined
-                        and artifact_item.version | string
-                        != artifact_previous_version)))
+          when: artifact_download_required
           no_log: "{{ artifact_item.no_log | default(true) }}"
           loop: "{{ _artifact_type_state_present }}"
           loop_control:

@@ -22,10 +22,17 @@
          + artifact_item.dest_file
            | default(artifact_item.file) }}
 
+    artifact_item_dest: >-
+        {{ (artifact_item.unarchive_force_root is defined
+            and artifact_structure_check_result.rc == 1)
+            | ternary(artifact_item_forced_root_dest,
+                      artifact_item.dest | default("")) }}
+
     artifact_item_forced_root_dest: >-
       {{ artifact_item.dest | default("")
          + "/"
          + artifact_item.unarchive_force_root | default("") }}
+
   tags:
     - role::artifact
     - role::artifact::unarchive
@@ -88,6 +95,28 @@
         loop_var: artifact_item
         label: "{{ artifact_item.id }}"
 
+    - name: Clean unarchive directory # noqa no-handler
+      ansible.builtin.include_tasks:
+        file: absent.yml
+      when: artifact_item_download_result is changed
+      loop: >-
+        {{ artifact_present_unarchive
+           | selectattr("unarchive_clean", "undefined")
+           | list
+           + artifact_present_unarchive
+             | selectattr("unarchive_clean", "defined")
+             | selectattr("unarchive_clean", "equalto", True)
+             | list }}
+      loop_control:
+        loop_var: artifact_item
+        index_var: artifact_item_index
+        label: "{{ artifact_item.id }}"
+      vars:
+        artifact_state_absent_transient:
+          - "{{ artifact_item }}"
+        artifact_absent_download: false
+        artifact_absent_task_name: Remove previous unarchived files
+
     - name: Unarchive artifacts # noqa no-handler
       ansible.builtin.unarchive:
         src: "{{ artifact_item_src }}"
@@ -121,13 +150,7 @@
               | selectattr("artifact_item", "equalto", artifact_item)
               | list).0 | default({"rc": 0}) }}
 
-        artifact_item_dest: >-
-          {{ (artifact_item.unarchive_force_root is defined
-              and artifact_structure_check_result.rc == 1)
-             | ternary(artifact_item_forced_root_dest,
-                       artifact_item.dest | default("")) }}
-
-    - name: Remove archive files
+    - name: Remove source archive files
       ansible.builtin.file:
         path: >-
           {{ artifact_item.dest | default("")
