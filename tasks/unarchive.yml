@@ -73,28 +73,6 @@
              | ternary(artifact_archive_check_zip_command,
                        artifact_archive_check_gtar_command) }}
 
-    - name: Setup unarchive root directory
-      ansible.builtin.file:
-        path: "{{ artifact_item_forced_root_dest }}"
-        mode: "{{ artifact_item.mode | default(omit) }}"
-        owner: "{{ artifact_item.owner | default(omit) }}"
-        selevel: "{{ artifact_item.selevel | default(omit) }}"
-        serole: "{{ artifact_item.serole | default(omit) }}"
-        setype: "{{ artifact_item.setype | default(omit) }}"
-        seuser: "{{ artifact_item.seuser | default(omit) }}"
-        state: directory
-      register: artifact_setup_archive_root_result
-      loop: >-
-        {{ artifact_check_archive_structure_result.results
-           | default([])
-           | selectattr("rc", "defined")
-           | selectattr("rc", "equalto", 1)
-           | map(attribute="artifact_item")
-           | list }}
-      loop_control:
-        loop_var: artifact_item
-        label: "{{ artifact_item.id }}"
-
     - name: Clean unarchive directory # noqa no-handler
       ansible.builtin.include_tasks:
         file: absent.yml
@@ -116,6 +94,28 @@
           - "{{ artifact_item }}"
         artifact_absent_download: false
         artifact_absent_task_name: Remove previous unarchived files
+
+    - name: Setup unarchive root directory
+      ansible.builtin.file:
+        path: "{{ artifact_item_forced_root_dest }}"
+        mode: "{{ artifact_item.mode | default(omit) }}"
+        owner: "{{ artifact_item.owner | default(omit) }}"
+        selevel: "{{ artifact_item.selevel | default(omit) }}"
+        serole: "{{ artifact_item.serole | default(omit) }}"
+        setype: "{{ artifact_item.setype | default(omit) }}"
+        seuser: "{{ artifact_item.seuser | default(omit) }}"
+        state: directory
+      register: artifact_setup_archive_root_result
+      loop: >-
+        {{ artifact_check_archive_structure_result.results
+           | default([])
+           | selectattr("rc", "defined")
+           | selectattr("rc", "equalto", 1)
+           | map(attribute="artifact_item")
+           | list }}
+      loop_control:
+        loop_var: artifact_item
+        label: "{{ artifact_item.id }}"
 
     - name: Unarchive artifacts # noqa no-handler
       ansible.builtin.unarchive:
