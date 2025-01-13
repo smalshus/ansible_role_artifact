@@ -32,8 +32,10 @@
 #   unarchive_force_root: <d>  # Ensure unarchive process creates the indicated
 #                              # root directory if the artifact package does not
 #                              # contain it
-#   unarchive_clean: >-        # Remove previous unarchived directory before
+#   unarchive_clean: >-        # Remove previous unarchived files before
 #     <true_false>             # unarchiving or when the artifact is removed.
+#                              # This feature is only available when
+#                              # artifact_local_facts variable is enabled
 #                              # Default is true
 #   version: <version>         # Version of the artifact. If not given will
 #                              # use empty string

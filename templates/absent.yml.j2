@@ -10,9 +10,13 @@
                        | default(artifact.dest + "/" + artifact.dest_file | default(artifact.file))
                        | default(none) %}
 
+{% if artifact_local_facts %}
 {% set unarchived_files = ansible_local["artifact_" + artifact.id].unarchived_files
                           | default(artifact_result[artifact.id].unarchived_files)
                           | default([]) %}
+{% else %}
+{% set unarchived_files = [] %}
+{% endif %}
 
 - id: "{{ artifact.id }}"
 {% set ns.found = true %}
