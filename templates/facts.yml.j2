@@ -19,10 +19,11 @@
   version: "{{ artifact.version | default('') }}"
 
 {% if artifact.type | lower in ["gitlab", "github", "http", "https", "jenkins"] %}
-  download_path: "{{ artifact.dest }}/{{ artifact.dest_file | default(artifact.file) }}"
+{% set download_path = artifact.dest + "/" + artifact.dest_file | default(artifact.file) %}
 {% else %}
-  download_path: "{{ result.dest | default((ansible_local["artifact_" + artifact.id] | default({}))['download_path'] | default('')) }}"
+{% set download_path = result.dest | default((ansible_local["artifact_" + artifact.id] | default({}))['download_path'] | default('')) %}
 {% endif %}
+  download_path: "{{ download_path | regex_replace("/+", "/") }}"
 
 {% if artifact.unarchive | default(false)
       and artifact_unarchive_result.results is defined %}
@@ -36,7 +37,9 @@
 
 {% if ansible_local["artifact_" + artifact.id] is defined
       and ansible_local["artifact_" + artifact.id].unarchived_files is defined %}
-{% set unarchived_files_saved = ansible_local["artifact_" + artifact.id].unarchived_files %}
+{% set unarchived_files_saved = ansible_local["artifact_" + artifact.id].unarchived_files
+                                | map("regex_replace", "/+", "/")
+                                | list %}
 {% else %}
 {% set unarchived_files_saved = [] %}
 {% endif %}
@@ -60,11 +63,20 @@
          inner_ns.unarchived_files
          + [ file
              | regex_replace("^./", "")
-             | regex_replace("^", path_replacement + "/") ] %}
+             | regex_replace("^", path_replacement + "/")
+             | regex_replace("/+", "/") ] %}
 {% endfor %}
-  unarchived_files: {{ inner_ns.unarchived_files | unique | list | to_json }}
+  unarchived_files: {{ inner_ns.unarchived_files
+                       | map("regex_replace", "/+", "/")
+                       | list
+                       | unique
+                       | list
+                       | to_json }}
 {% else %}
-  unarchived_files: {{ unarchived_files_saved | to_json }}
+  unarchived_files: {{ unarchived_files_saved
+                       | map("regex_replace", "/+", "/")
+                       | list
+                       | to_json }}
 {% endif %}
 
 {% else %}

@@ -130,6 +130,8 @@
         serole: "{{ artifact_item.serole | default(omit) }}"
         setype: "{{ artifact_item.setype | default(omit) }}"
         seuser: "{{ artifact_item.seuser | default(omit) }}"
+        include: "{{ artifact_item.unarchive_include | default(omit) }}"
+        exclude: "{{ artifact_item.unarchive_exclude | default(omit) }}"
         creates: >-
           {{ (artifact_item.unarchive_creates | default("") | length > 0
               and not artifact_item_download_result is changed)
