@@ -19,7 +19,8 @@
 
     artifact_maven_previous_download_path: >-
       {{ ansible_local["artifact_" + artifact_item.id].download_path
-         | default("") }}
+         | default("")
+         | regex_replace("/+", "/") }}
 
     artifact_maven_has_previous_download_path: >-
       {{ artifact_maven_previous_download_path | length > 0 }}

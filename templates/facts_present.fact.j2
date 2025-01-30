@@ -1,5 +1,5 @@
 {
   "version": {{ artifact_result[artifact_id].version | to_json }},
-  "download_path": {{ artifact_result[artifact_id].download_path | to_json }},
-  "unarchived_files": {{ artifact_result[artifact_id].unarchived_files | to_json }}
+  "download_path": {{ artifact_result[artifact_id].download_path | regex_replace("/+", "/") | to_json }},
+  "unarchived_files": {{ artifact_result[artifact_id].unarchived_files | map("regex_replace", "/+", "/") | list | to_json }}
 }
