@@ -17,7 +17,8 @@
           {{ (artifact_list
               + ((artifact_load_from_hostvars | bool)
                  | ternary(artifact_hostvars | default([]) | flatten, [])))
-             | map("artifact_reverse_combine", artifact_defaults) }}
+             | map("artifact_reverse_combine", artifact_defaults)
+             | map("combine", artifact_mandatory, recursive=True) }}
 
     - name: Setup fact with artifacts with undefined state
       ansible.builtin.set_fact:
