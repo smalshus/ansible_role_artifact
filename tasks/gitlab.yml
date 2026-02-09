@@ -78,7 +78,7 @@
                  + "/"
                  + artifact_item.project
                  + ".git" }}
-            mode: "{{ artifact_item.mode | default(omit) }}"
+            mode: 0700
             state: directory
           register: artifact_gitlab_tmp_result
           no_log: "{{ artifact_item.no_log | default(true) }}"
